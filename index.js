@@ -3,6 +3,9 @@ const app = express();
 const port = 3000;
 const axios = require("axios");
 
+const Pool = require('pg').Pool
+const DB_DSN = 'SECRET'
+
 
 // id is index
 const dummyUsers = [
@@ -80,6 +83,36 @@ app.get("/third-party", (req, res) => {
   const apiResponse = axios.get("https://dog.ceo/api/breeds/list/all");
   return res.json(apiResponse);
 });
+
+
+// get data from db
+app.get("/db/users", (req,res)=>{
+  const pool = new Pool({
+    connectionString: DB_DSN
+  })
+  
+  pool.query('SELECT * FROM users', (error, results) => {
+    if (error) {
+      throw error
+    }
+    res.status(200).json(results.rows)
+  })
+})
+
+// insert user into table users
+app.post("/db/users", (req,res)=>{
+  const data = req.body;
+  const pool = new Pool({
+    connectionString: DB_DSN
+  })
+  
+  pool.query('INSERT INTO users (name, balance) VALUES ($1, $2) RETURNING *', [data.name, data.balance], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(201).send(`User added with ID: ${results.rows[0].id}`)
+  })
+})
 
 // sample endpoint
 app.get("/", (req, res) => {
